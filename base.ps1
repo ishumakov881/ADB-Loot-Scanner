@@ -1,4 +1,4 @@
-ï»¿# ========== CONFIG ==========
+# ========== CONFIG ==========
 
 $device = "adb-R5CY84FR39K-GZWkml._adb-tls-connect._tcp"
 
@@ -6,7 +6,7 @@ $outFile = "hunter_output.txt"
 $uniqueFile = "hunter_unique.txt"
 $burpFile = "hunter_burp.txt"
 
-# Create files if they do not exist, and clear them
+# Nicaa?i oaeeu, anee eo iao
 foreach ($file in @($outFile, $uniqueFile, $burpFile)) {
     if (-not (Test-Path $file)) {
         New-Item -ItemType File -Path $file | Out-Null
@@ -16,14 +16,33 @@ foreach ($file in @($outFile, $uniqueFile, $burpFile)) {
 }
 
 # ========== REGEX PATTERNS ==========
-# Construct the URL pattern by concatenating the quote to avoid parsing issues
-$quote = "'"
-$pattern_url = 'https?://[^ \t\r\n"' + $quote + ']+'
-$pattern_email = '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
-
 $patterns = @(
-    $pattern_url, # URL pattern
-    $pattern_email # Email pattern
+    # URLs
+    "https?://[^ \t\r\n""']+",
+
+    # JWT tokens
+    "eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+",
+
+    # Google/Firebase API key
+    "AIza[0-9A-Za-z\-_]{35}",
+
+    # Bearer tokens
+    "Bearer\s+[A-Za-z0-9._-]+",
+
+    # Authorization header
+    "Authorization:\s*\S+",
+
+    # ONLY real domains — IA EIAEO android.app, com.samsung.android.app
+    "\\b([a-zA-Z0-9-]{2,63}\.)+(com|net|org|io|dev|app|cloud|store)\\b",
+
+    # AWS keys
+    "AKIA[0-9A-Z]{16}",
+
+    # UUIDs
+    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+
+    # Multipart boundaries
+    "----WebKitFormBoundary[a-zA-Z0-9]+"
 )
 
 # ========== MAIN LOOP ==========
@@ -43,20 +62,19 @@ adb -s $device logcat | ForEach-Object {
             $matches = [regex]::Matches($line, $pattern)
         }
         catch {
-            Write-Warning "? Regex error: $($_.Exception.Message) Pattern: $pattern"
+            Write-Warning "? Regex error: $pattern"
             continue
         }
 
         foreach ($match in $matches) {
             $value = $match.Value.Trim()
 
-            Write-Host "[FOUND] $value @@ $line" -ForegroundColor Green
+            Write-Host "[FOUND] $value" -ForegroundColor Green
 
             # Write all
             Add-Content -Path $outFile -Value "$value"
 
             # Write unique
-            # This part will be enhanced later with HashSet if basic parsing works
             if (-not (Select-String -Path $uniqueFile -Pattern ([regex]::Escape($value)) -Quiet)) {
                 Add-Content -Path $uniqueFile -Value "$value"
             }
