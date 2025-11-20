@@ -26,6 +26,20 @@ $patterns = @(
     $pattern_email # Email pattern
 )
 
+# ========== EXCLUSION PATTERNS ==========
+$exclusionPatterns = @(
+    'android\.app',
+    'com\.samsung\.android\.app',
+    'vendor\.',
+    'service-id',
+    'request-id',
+    'session-id',
+    'job-id',
+    'worker-id',
+    'task-id',
+    'com\.android\.'
+)
+
 # ========== MAIN LOOP ==========
 
 Write-Host "?? BugBounty Hunter started..." -ForegroundColor Cyan
@@ -37,6 +51,16 @@ Write-Host "-------------------------------------`n"
 
 adb -s $device logcat | ForEach-Object {
     $line = $_
+
+    # Filter noisy lines
+    $shouldExclude = $false
+    foreach ($excludePattern in $exclusionPatterns) {
+        if ($line -match $excludePattern) {
+            $shouldExclude = $true
+            break
+        }
+    }
+    if ($shouldExclude) { return }
 
     foreach ($pattern in $patterns) {
         try {

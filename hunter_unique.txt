@@ -1,10 +1,5 @@
-com.android.server.inputmethod.IInputMethodInvoker@3e8b287.showSoftInput
-com.android.server.inputmethod.IInputMethodInvoker@3e8b287.hideSoftInput
 androidx.work.systemjobscheduler@com.google.android.googlequicksearchbox
 androidx.work.systemjobscheduler@com.samsung.android.sdm.config
-com.android.server.inputmethod.IInputMethodInvoker@cc35d51.showSoftInput
-com.android.server.inputmethod.IInputMethodInvoker@cc35d51.hideSoftInput
-androidx.work.systemjobscheduler@com.google.android.apps.messaging
 http://pkg.samsung.com/user/person#base_person_0d9a3c4d-354d-40d1-b016-07b3bd638765>
 http://pkg.samsung.com/user/person#base_person_0d9a3c4d-354d-40d1-b016-07b3bd638765>])
 http://pkg.samsung.com/user/person#base_person_7a76ce88-2cf2-4374-ab52-ca7c18396406>
@@ -21,4 +16,3 @@ https://api.account.samsung.com/v1/abtests?countryCode=GE&modelCode=SM-S731BDBCC
 https://api.weather.com/v2/aggcommon/v3-location-point;v3alertsHeadlines;v3-wx-observations-current;v2fcstdaily7s;v3-wx-forecast-hourly-1day;v3-insights;v3-links?insightType=all&geocode=
 https://api.weather.com/v3/wx/globalAirQuality&geocode=
 https://api.weather.com/v3/aggcommon/v3-insights;v3-cms-partner-playlist?insightType=mapInsight&par=samsung_radar&geocode=
-https://api.weather.com/v3/insights?insightType=all&par=samsung_pn&placeid=bca30e49ca7ec58daf43eada75b63ccc5df5c5afdd98d2a94e23b85ba0d1acd5&units=m&language=ru-ru&format=json&apiKey=
