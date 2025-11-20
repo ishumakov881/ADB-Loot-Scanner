@@ -6,7 +6,7 @@ $outFile = "hunter_output.txt"
 $uniqueFile = "hunter_unique.txt"
 $burpFile = "hunter_burp.txt"
 
-# Создаём файлы, если их нет
+# пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ
 foreach ($file in @($outFile, $uniqueFile, $burpFile)) {
     if (-not (Test-Path $file)) {
         New-Item -ItemType File -Path $file | Out-Null
@@ -32,7 +32,7 @@ $patterns = @(
     # Authorization header
     "Authorization:\s*\S+",
 
-    # ONLY real domains — НЕ ЛОВИТ android.app, com.samsung.android.app
+    # ONLY real domains пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ android.app, com.samsung.android.app
     "\\b([a-zA-Z0-9-]{2,63}\.)+(com|net|org|io|dev|app|cloud|store)\\b",
 
     # AWS keys
@@ -42,7 +42,39 @@ $patterns = @(
     # "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 
     # Multipart boundaries
-    "----WebKitFormBoundary[a-zA-Z0-9]+"
+    "----WebKitFormBoundary[a-zA-Z0-9]+",
+
+    # 4.1 Base64-РїРѕРґРѕР±РЅС‹Рµ СЃС‚СЂРѕРєРё
+    "(?:[A-Za-z0-9+/]{20,}={0,2})",
+
+    # 4.2 Tokens/Secrets РїРѕ РєР»СЋС‡РµРІС‹Рј СЃР»РѕРІР°Рј
+    "(token|key|apiKey|secret|session|auth|authorization|access|refresh)[=:\\s]+([A-Za-z0-9._\\-]+)",
+
+    # 4.3 GraphQL endpoints
+    "/graphql(?:\\?|/|$)",
+
+    # 4.4 Р’РЅСѓС‚СЂРµРЅРЅРёРµ IP endpoints (10.x.x.x, 192.168.x.x, 172.16вЂ“31)
+    "https?://(?:10\\.\\d+\\.\\d+\\.\\d+|192\\.168\\.\\d+\\.\\d+|172\\.(1[6-9]|2\\d|3[0-1])\\.\\d+\\.\\d+)[^\\s\"'<>]+",
+
+    # 4.5 OAuth2 Access/Refresh Tokens
+    "(?:access_token|refresh_token)[\"'=:\\s]+([A-Za-z0-9\\-._~+/]+)",
+
+    # 4.6 Cookies
+    "(Set-Cookie|Cookie):\\s*[A-Za-z0-9._-]+=([A-Za-z0-9._\\-]+)",
+
+    # 4.7 Passwords
+    "(password|pwd|pass)[\"'=:\\s]+([^\\s\"'<>]+)",
+
+    # 4.8 Email Р°РґСЂРµСЃР°
+    "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+
+    # 4.9 Cloud Storage URLs (S3, GCS, Azure)
+    "https?://[A-Za-z0-9.-]+\\.amazonaws\\.com/[^\\s\"']+",
+    "https?://storage\\.googleapis\\.com/[^\\s\"']+",
+    "https?://[A-Za-z0-9.-]+\\.blob\\.core\\.windows\\.net/[^\\s\"']+",
+
+    # 4.10 JSON Authorization Fields
+    "\"authorization\"\\s*:\\s*\"[A-Za-z0-9._\\-]+\"
 )
 
 # ========== MAIN LOOP ==========
