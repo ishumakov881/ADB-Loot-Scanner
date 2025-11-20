@@ -39,7 +39,7 @@ $patterns = @(
     "AKIA[0-9A-Z]{16}",
 
     # UUIDs
-    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+    # "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
 
     # Multipart boundaries
     "----WebKitFormBoundary[a-zA-Z0-9]+"
@@ -69,7 +69,7 @@ adb -s $device logcat | ForEach-Object {
         foreach ($match in $matches) {
             $value = $match.Value.Trim()
 
-            Write-Host "[FOUND] $value" -ForegroundColor Green
+            Write-Host "[FOUND] $value @@ $line" -ForegroundColor Green
 
             # Write all
             Add-Content -Path $outFile -Value "$value"
