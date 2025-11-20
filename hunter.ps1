@@ -1,10 +1,10 @@
-# ========== CONFIG ========== 
+# ========== CONFIG ==========
 
 $device = "adb-R5CY84FR39K-GZWkml._adb-tls-connect._tcp"
 $logDir = "hunter_logs"
 $burpFile = "hunter_burp.txt" # Global file for all findings
 
-# ========== SETUP ========== 
+# ========== SETUP ==========
 
 # Create log directory if it does not exist
 if (-not (Test-Path -Path $logDir -PathType Container)) {
@@ -20,37 +20,44 @@ if (Test-Path $burpFile) {
 }
 
 
-# ========== REGEX PATTERNS ========== 
+# ========== REGEX PATTERNS ==========
 
-# Use a hashtable to group patterns by name
+# Use a hashtable to group patterns by name and risk level
 $quote = "'"
 $patternGroups = @{
-    "url"            = 'https?://[^ \t\r\n"' + $quote + ']+';
-    "content_uri"    = 'content://[^\s"' + $quote + ']+';
-    "mac_address"    = '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})';
-    "phone_number"   = '\+?\d{1,3}[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{2}[-.\s]?\d{2}';
-    "email"          = '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}';
-    "jwt"            = 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+';
-    "firebase_key"   = 'AIza[0-9A-Za-z\-_]{35}';
-    "bearer_token"   = 'Bearer\s+[A-Za-z0-9._-]+';
-    "auth_header"    = 'Authorization:\s*\S+';
-    "domain"         = '\b([a-zA-Z0-9-]{2,63}\.)+(com|net|org|io|dev|app|cloud|store)\b';
-    "aws_key"        = 'AKIA[0-9A-Z]{16}';
-    "multipart"      = '----WebKitFormBoundary[a-zA-Z0-9]+';
-    "base64"         = '(?:[A-Za-z0-9+/]{20,}={0,2})'; # Post-filtered in the main loop
-    "keyword_token"  = '(token|key|apiKey|secret|session|auth|authorization|access|refresh)[=:\s]+([A-Za-z0-9._-]+)';
-    "graphql"        = "/graphql(?:\?|/|`$)";
-    "internal_ip"    = 'https?://(?:10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[0-1])\.\d+\.\d+)[^ \t\r\n"' + $quote + '<>]+';
-    "oauth_token"    = '(?:access_token|refresh_token)["' + $quote + '=:\s]+([A-Za-z0-9\-._~+/]+)';
-    "cookies"        = '(Set-Cookie|Cookie):\s*[A-Za-z0-9._-]+=[A-Za-z0-9._-]+';
-    "passwords"      = '(password|pwd|pass)["' + $quote + '=:\s]+([^\s"' + $quote + '<>]+)';
-    "s3_url"         = 'https?://[A-Za-z0-9.-]+\.amazonaws\.com/[^ \t\r\n"' + $quote + ']+';
-    "gcs_url"        = 'https?://storage\.googleapis\.com/[^ \t\r\n"' + $quote + ']+';
-    "azure_url"      = 'https?://[A-Za-z0-9.-]+\.blob\.core\.windows\.net/[^ \t\r\n"' + $quote + ']+';
-    "json_auth"      = '"authorization"\s*:\s*"[A-Za-z0-9._-]+"'
+    # HIGH risk patterns
+    "passwords"      = @{ Regex = '(password|pwd|pass)"\' + $quote + '=:\s]+([^\s"\' + $quote + '<>]+)';                            Level = 'HIGH' };
+    "aws_key"        = @{ Regex = 'AKIA[0-9A-Z]{16}';                                                                           Level = 'HIGH' };
+    "firebase_key"   = @{ Regex = 'AIza[0-9A-Za-z\-_]{35}';                                                                     Level = 'HIGH' };
+    "jwt"            = @{ Regex = 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+';                                            Level = 'HIGH' };
+    "bearer_token"   = @{ Regex = 'Bearer\s+[A-Za-z0-9._-]+';                                                                  Level = 'HIGH' };
+    "auth_header"    = @{ Regex = 'Authorization:\s*\S+';                                                                     Level = 'HIGH' };
+    "keyword_token"  = @{ Regex = '(token|key|apiKey|secret|session|auth|authorization|access|refresh)[=:\s]+([A-Za-z0-9._-]{8,})'; Level = 'HIGH' };
+    "oauth_token"    = @{ Regex = '(?:access_token|refresh_token)"\' + $quote + '=:\s]+([A-Za-z0-9\-._~+/]+)';                   Level = 'HIGH' };
+    "json_auth"      = @{ Regex = '"authorization"\s*:\s*"[A-Za-z0-9._-]+"';                                                    Level = 'HIGH' };
+
+    # MEDIUM risk patterns
+    "email"          = @{ Regex = '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}';                                              Level = 'MEDIUM' };
+    "phone_number"   = @{ Regex = '\+?(\d[ -]?){9,15}\d';                                                                       Level = 'MEDIUM' };
+    "internal_ip"    = @{ Regex = 'https?://(?:10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[0-1])\.\d+\.\d+)[^ \t\r\n"\' + $quote + '<>]+'; Level = 'MEDIUM' };
+    "s3_url"         = @{ Regex = 'https?://[A-Za-z0-9.-]+\.amazonaws\.com/[^ \t\r\n"\' + $quote + ']+';                           Level = 'MEDIUM' };
+    "gcs_url"        = @{ Regex = 'https?://storage\.googleapis\.com/[^ \t\r\n"\' + $quote + ']+';                                Level = 'MEDIUM' };
+    "azure_url"      = @{ Regex = 'https?://[A-Za-z0-9.-]+\.blob\.core\.windows\.net/[^ \t\r\n"\' + $quote + ']+';                 Level = 'MEDIUM' };
+    "content_uri"    = @{ Regex = 'content://[^\s"\' + $quote + ']+';                                                             Level = 'MEDIUM' };
+    "cookies"        = @{ Regex = '(Set-Cookie|Cookie):\s*[A-Za-z0-9._-]+=[A-Za-z0-9._-]+';                                     Level = 'MEDIUM' };
+    
+    # LOW risk patterns
+    "graphql"        = @{ Regex = "/graphql(?:\?|/|`$)";                                                                        Level = 'LOW' };
+    "url"            = @{ Regex = 'https?://[^ \t\r\n"\' + $quote + ']+';                                                         Level = 'LOW' };
+    "base64"         = @{ Regex = '(?:[A-Za-z0-9+/]{20,}={0,2})';                                                              Level = 'LOW' }; # Post-filtered
+    "domain"         = @{ Regex = '\b([a-zA-Z0-9-]{2,63}\.)+(com|net|org|io|dev|app|cloud|store)\b';                             Level = 'LOW' };
+    "mac_address"    = @{ Regex = '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})';                                                     Level = 'LOW' };
+
+    # NOISE risk patterns
+    "multipart"      = @{ Regex = '----WebKitFormBoundary[a-zA-Z0-9]+';                                                         Level = 'NOISE' };
 }
 
-# ========== EXCLUSION PATTERNS ========== 
+# ========== EXCLUSION PATTERNS ==========
 $exclusionPatterns = @(
     'android\.app',
     'com\.samsung\.android\.app',
@@ -65,7 +72,7 @@ $exclusionPatterns = @(
     '\bSDHMS\b:'
 )
 
-# ========== UNIQUE CHECK SETUP ========== 
+# ========== UNIQUE CHECK SETUP ==========
 # Create a hashtable of HashSets, one for each pattern group
 $uniqueSets = @{}
 foreach ($key in $patternGroups.Keys) {
@@ -79,7 +86,7 @@ foreach ($key in $patternGroups.Keys) {
 }
 
 
-# ========== MAIN LOOP ========== 
+# ========== MAIN LOOP ==========
 
 Write-Host "?? BugBounty Hunter started..." -ForegroundColor Cyan
 Write-Host "?? Listening ADB logcat for: $device"
@@ -103,7 +110,9 @@ adb -s $device logcat '*:V' 'SDHMS:S' | ForEach-Object {
     # Iterate through each pattern group
     foreach ($group in $patternGroups.GetEnumerator()) {
         $groupName = $group.Name
-        $pattern = $group.Value
+        $patternData = $group.Value
+        $pattern = $patternData.Regex
+        $level = $patternData.Level
         
         try {
             $matches = [regex]::Matches($line, $pattern)
@@ -122,13 +131,16 @@ adb -s $device logcat '*:V' 'SDHMS:S' | ForEach-Object {
                 $value = $match.Value.Trim()
 
                 # Post-filter for specific noisy groups
-                if ($groupName -eq "base64" -and $value -notmatch '\d') {
-                    continue # Skip Base64 matches that do not contain any digits
+                if ($groupName -eq "base64") {
+                    # Skip if the value doesn't contain a mix of lower, upper, and digits
+                    if (($value -notmatch '[a-z]') -or ($value -notmatch '[A-Z]') -or ($value -notmatch '\d')) {
+                        continue
+                    }
                 }
 
-                $outputLine = "MATCH: $value   LINE: $line"
+                $outputLine = "[$level] MATCH: $value   LINE: $line"
 
-                Write-Host "[FOUND][$groupName] $outputLine" -ForegroundColor Green
+                Write-Host "[$level][$groupName] $value" -ForegroundColor Green
 
                 # Write to the specific log file for this group
                 Add-Content -Path $logFile -Value $outputLine
