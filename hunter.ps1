@@ -27,6 +27,8 @@ $quote = "'"
 $patternGroups = @{
     "url"            = 'https?://[^ \t\r\n"' + $quote + ']+';
     "content_uri"    = 'content://[^\s"' + $quote + ']+';
+    "mac_address"    = '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})';
+    "phone_number"   = '\+?\d{1,3}[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{2}[-.\s]?\d{2}';
     "email"          = '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}';
     "jwt"            = 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+';
     "firebase_key"   = 'AIza[0-9A-Za-z\-_]{35}';
@@ -59,7 +61,8 @@ $exclusionPatterns = @(
     'job-id',
     'worker-id',
     'task-id',
-    'com\.android\.'
+    'com\.android\.',
+    '\bSDHMS\b:'
 )
 
 # ========== UNIQUE CHECK SETUP ========== 
@@ -84,7 +87,7 @@ Write-Host "?? Saving categorized logs to: $logDir"
 Write-Host "?? Saving all findings for Burp to: $burpFile"
 Write-Host "-------------------------------------`n"
 
-adb -s $device logcat | ForEach-Object {
+adb -s $device logcat '*:V' 'SDHMS:S' | ForEach-Object {
     $line = $_
 
     # Filter noisy lines
